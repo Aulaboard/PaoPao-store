@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="lo">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ປ້າຍທະບຽນນີ້ແມ່ນຂອງໃຜ</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Lao:wght@300;400;500;600;700&display=swap');
+
+  :root{
+    --bg:#14161A;
+    --surface:#1E2128;
+    --surface-2:#272B33;
+    --border:#333844;
+    --amber:#FFB020;
+    --amber-dark:#CC8814;
+    --text:#F2F3F5;
+    --text-dim:#9BA1AC;
+    --danger:#E5484D;
+    --danger-dark:#B93A3E;
+    --success:#34C759;
+    --plate-blue:#1E4FA0;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0; padding:0; background:var(--bg); color:var(--text);
+    font-family:'Noto Sans Lao', sans-serif; font-weight:400;
+  }
+  body{ padding:20px 16px 60px; min-height:100vh; }
+  .wrap{ max-width:480px; margin:0 auto; }
+
+  header{ margin-bottom:18px; }
+  header h1{
+    font-size:1.3rem; font-weight:600; margin:0 0 2px;
+    letter-spacing:.2px;
+  }
+  header p{ margin:0; color:var(--text-dim); font-size:.85rem; }
+
+  /* --- Plate-styled search --- */
+  .plate{
+    background:#fff; border:3px solid #111;
+    border-radius:12px 12px 7px 7px; overflow:hidden;
+    box-shadow:0 10px 26px rgba(0,0,0,.45);
+    margin-bottom:16px;
+  }
+  .plate-input{
+    width:100%; border:none; outline:none; background:transparent;
+    text-align:center; font-family:'Noto Sans Lao', sans-serif; font-weight:700;
+    font-size:1.7rem; color:#111; padding:20px 12px 12px;
+    letter-spacing:1px;
+  }
+  .plate-input::placeholder{ color:#b8b8b8; font-weight:500; font-size:1.1rem; }
+  .plate-strip{
+    background:var(--plate-blue); color:#fff; text-align:center;
+    font-size:.72rem; padding:7px; letter-spacing:.3px; font-weight:400;
+  }
+
+  /* --- Result area --- */
+  .hint{
+    color:var(--text-dim); font-size:.88rem; text-align:center;
+    padding:26px 10px;
+  }
+
+  .card{
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:14px; padding:16px; display:flex; gap:14px;
+    align-items:flex-start; margin-bottom:10px;
+  }
+  .card img.thumb, .thumb-fallback{
+    width:64px; height:64px; border-radius:10px; object-fit:cover;
+    background:var(--surface-2); flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    color:var(--text-dim); font-size:.65rem; text-align:center;
+  }
+  .card .info{ flex:1; min-width:0; }
+  .card .plate-tag{
+    display:inline-block; background:var(--amber); color:#1a1200;
+    font-weight:600; font-size:.85rem; padding:2px 9px; border-radius:6px;
+    margin-bottom:6px;
+  }
+  .card .name{ font-size:1.05rem; font-weight:600; margin:0 0 2px; }
+  .card .sub{ color:var(--text-dim); font-size:.85rem; margin:0 0 2px; }
+  .card .note{ color:var(--text-dim); font-size:.8rem; margin-top:6px; font-style:italic; }
+  .card-actions{ display:flex; gap:8px; margin-top:12px; }
+
+  .match-row{
+    display:flex; align-items:center; gap:10px; padding:10px;
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:10px; margin-bottom:8px; cursor:pointer;
+  }
+  .match-row:active{ background:var(--surface-2); }
+  .match-row img.thumb-sm, .thumb-fallback-sm{
+    width:38px; height:38px; border-radius:8px; object-fit:cover;
+    background:var(--surface-2); flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    font-size:.55rem; color:var(--text-dim);
+  }
+  .match-row .plate-tag-sm{
+    font-weight:600; font-size:.8rem; color:var(--amber);
+  }
+  .match-row .name-sm{ font-size:.95rem; }
+
+  /* --- Buttons --- */
+  button{ font-family:'Noto Sans Lao', sans-serif; cursor:pointer; border:none; }
+  .btn{
+    padding:11px 16px; border-radius:9px; font-size:.9rem; font-weight:500;
+  }
+  .btn-primary{ background:var(--amber); color:#1a1200; }
+  .btn-primary:active{ background:var(--amber-dark); }
+  .btn-ghost{ background:var(--surface-2); color:var(--text); }
+  .btn-ghost:active{ background:var(--border); }
+  .btn-danger{ background:transparent; color:var(--danger); border:1px solid var(--danger); }
+  .btn-danger:active{ background:rgba(229,72,77,.12); }
+  .btn-block{ width:100%; }
+
+  .empty-cta{ text-align:center; padding:20px 10px; }
+  .empty-cta p{ color:var(--text-dim); font-size:.9rem; margin:0 0 14px; }
+
+  /* --- Footer link --- */
+  .manage-link{
+    display:flex; align-items:center; justify-content:space-between;
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:12px; padding:14px 16px; margin-top:22px;
+  }
+  .manage-link .label{ font-size:.92rem; }
+  .manage-link .count{ color:var(--text-dim); font-size:.8rem; }
+  .manage-link .arrow{ color:var(--text-dim); }
+
+  /* --- Views --- */
+  .view{ display:none; }
+  .view.active{ display:block; }
+
+  .top-nav{
+    display:flex; align-items:center; gap:10px; margin-bottom:16px;
+  }
+  .top-nav button{ background:none; color:var(--text-dim); font-size:.9rem; padding:6px 0; }
+  .top-nav h2{ font-size:1.05rem; font-weight:600; margin:0; }
+
+  .list-row{
+    display:flex; align-items:center; gap:12px; padding:12px;
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:11px; margin-bottom:8px; cursor:pointer;
+  }
+  .list-row:active{ background:var(--surface-2); }
+  .list-row .rinfo{ flex:1; min-width:0; }
+  .list-row .rplate{ font-weight:600; color:var(--amber); font-size:.85rem; }
+  .list-row .rname{ font-size:.95rem; }
+
+  .fab{
+    position:fixed; bottom:22px; right:22px; width:54px; height:54px;
+    border-radius:50%; background:var(--amber); color:#1a1200;
+    font-size:1.6rem; box-shadow:0 8px 20px rgba(0,0,0,.4);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .fab:active{ background:var(--amber-dark); }
+
+  /* --- Form --- */
+  .field{ margin-bottom:14px; }
+  .field label{ display:block; font-size:.82rem; color:var(--text-dim); margin-bottom:6px; }
+  .field input, .field textarea{
+    width:100%; background:var(--surface-2); border:1px solid var(--border);
+    color:var(--text); border-radius:9px; padding:11px 12px; font-size:.95rem;
+    font-family:'Noto Sans Lao', sans-serif; outline:none;
+  }
+  .field input:focus, .field textarea:focus{ border-color:var(--amber); }
+  .field textarea{ resize:vertical; min-height:60px; }
+
+  .photo-row{ display:flex; align-items:center; gap:14px; margin-bottom:16px; }
+  .photo-preview{
+    width:72px; height:72px; border-radius:12px; object-fit:cover;
+    background:var(--surface-2); flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    color:var(--text-dim); font-size:.6rem; text-align:center;
+  }
+  .photo-btn-wrap input[type=file]{ display:none; }
+
+  .form-actions{ display:flex; gap:10px; margin-top:4px; }
+  .form-actions .btn{ flex:1; }
+
+  .toast{
+    position:fixed; bottom:22px; left:50%; transform:translateX(-50%);
+    background:var(--surface-2); color:var(--text); padding:10px 18px;
+    border-radius:20px; font-size:.85rem; border:1px solid var(--border);
+    opacity:0; pointer-events:none; transition:opacity .2s;
+    box-shadow:0 6px 16px rgba(0,0,0,.4);
+  }
+  .toast.show{ opacity:1; }
+
+  .search-empty-row{ text-align:center; color:var(--text-dim); font-size:.85rem; padding:20px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ============ HOME VIEW ============ -->
+  <div class="view active" id="view-home">
+    <header>
+      <h1>ປ້າຍທະບຽນນີ້ແມ່ນຂອງໃຜ</h1>
+      <p>ພິມເລກທະບຽນລົດ ແລ້ວເບິ່ງວ່າແມ່ນລົດຂອງລູກຄ້າຄົນໃດ</p>
+    </header>
+
+    <div class="plate">
+      <input id="searchInput" class="plate-input" placeholder="ຕົວຢ່າງ: ກຂ 1234" autocomplete="off" />
+      <div class="plate-strip">ພິມທະບຽນເພື່ອຄົ້ນຫາລູກຄ້າ</div>
+    </div>
+
+    <div id="resultArea"></div>
+
+    <div class="manage-link" id="manageLink">
+      <div>
+        <div class="label">ລາຍຊື່ລູກຄ້າທັງໝົດ</div>
+        <div class="count" id="totalCount">0 ຄົນ</div>
+      </div>
+      <div class="arrow">›</div>
+    </div>
+  </div>
+
+  <!-- ============ LIST VIEW ============ -->
+  <div class="view" id="view-list">
+    <div class="top-nav">
+      <button id="backFromList">‹ ກັບຄືນ</button>
+      <h2>ລູກຄ້າທັງໝົດ</h2>
+    </div>
+    <div id="listArea"></div>
+  </div>
+
+  <!-- ============ FORM VIEW ============ -->
+  <div class="view" id="view-form">
+    <div class="top-nav">
+      <button id="backFromForm">‹ ຍົກເລີກ</button>
+      <h2 id="formTitle">ເພີ່ມລູກຄ້າໃໝ່</h2>
+    </div>
+
+    <div class="photo-row">
+      <div class="photo-preview" id="photoPreview">ບໍ່ມີຮູບ</div>
+      <div class="photo-btn-wrap">
+        <label class="btn btn-ghost" for="photoInput">ເລືອກຮູບພາບ</label>
+        <input type="file" id="photoInput" accept="image/*" />
+      </div>
+    </div>
+
+    <div class="field">
+      <label>ເລກທະບຽນ *</label>
+      <input id="formPlate" placeholder="ຕົວຢ່າງ: ກຂ 1234 ນະຄອນຫຼວງວຽງຈັນ" />
+    </div>
+    <div class="field">
+      <label>ຊື່ລູກຄ້າ *</label>
+      <input id="formName" placeholder="ຊື່-ນາມສະກຸນ ຫຼືຊື່ຫຼິ້ນ" />
+    </div>
+    <div class="field">
+      <label>ເບີໂທ</label>
+      <input id="formPhone" placeholder="020-xxx-xxxxx" />
+    </div>
+    <div class="field">
+      <label>ຮຸ່ນລົດ / ສີ</label>
+      <input id="formCar" placeholder="ຕົວຢ່າງ: Honda City ສີຂາວ" />
+    </div>
+    <div class="field">
+      <label>ໝາຍເຫດ</label>
+      <textarea id="formNote" placeholder="ຕົວຢ່າງ: ບ່ອນຈອດປະຈຳ, ເບີສຳຮອງ ແລະອື່ນໆ"></textarea>
+    </div>
+
+    <div class="form-actions">
+      <button class="btn btn-primary" id="saveBtn">ບັນທຶກ</button>
+    </div>
+    <div class="form-actions" id="deleteWrap" style="display:none; margin-top:8px;">
+      <button class="btn btn-danger" id="deleteBtn">ລຶບລູກຄ້າລາຍນີ້</button>
+    </div>
+  </div>
+
+  <button class="fab" id="fabAdd" style="display:none;">+</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const STORAGE_KEY = 'customers';
+  let customers = [];
+  let editingId = null;
+  let pendingPhoto = null;
+
+  const $ = (id) => document.getElementById(id);
+
+  function showView(name){
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    $('view-' + name).classList.add('active');
+    $('fabAdd').style.display = (name === 'list') ? 'flex' : 'none';
+  }
+
+  function showToast(msg){
+    const t = $('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 1800);
+  }
+
+  function normalizePlate(s){
+    return (s || '').replace(/\s+/g, '').toUpperCase();
+  }
+
+  async function loadCustomers(){
+    try{
+      const result = await window.storage.get(STORAGE_KEY, true);
+      customers = result && result.value ? JSON.parse(result.value) : [];
+    }catch(e){
+      customers = [];
+    }
+    renderHome();
+  }
+
+  async function saveCustomers(){
+    try{
+      const result = await window.storage.set(STORAGE_KEY, JSON.stringify(customers), true);
+      if(!result){ showToast('ບັນທຶກບໍ່ສຳເລັດ ລອງໃໝ່ອີກຄັ້ງ'); return false; }
+      return true;
+    }catch(e){
+      showToast('ບັນທຶກບໍ່ສຳເລັດ ລອງໃໝ່ອີກຄັ້ງ');
+      return false;
+    }
+  }
+
+  function thumbHtml(c, cls){
+    if(c.photo){
+      return `<img class="${cls}" src="${c.photo}" />`;
+    }
+    return `<div class="${cls === 'thumb' ? 'thumb-fallback' : (cls==='thumb-sm' ? 'thumb-fallback-sm' : 'thumb-fallback')}">ບໍ່ມີຮູບ</div>`;
+  }
+
+  function renderHome(){
+    $('totalCount').textContent = customers.length + ' ຄົນ';
+    runSearch();
+  }
+
+  function runSearch(){
+    const raw = $('searchInput').value;
+    const q = normalizePlate(raw);
+    const area = $('resultArea');
+
+    if(!q){
+      area.innerHTML = `<div class="hint">ພິມທະບຽນລົດຂ້າງເທິງເພື່ອເບິ່ງຂໍ້ມູນລູກຄ້າ</div>`;
+      return;
+    }
+
+    const exact = customers.find(c => normalizePlate(c.plate) === q);
+    if(exact){
+      area.innerHTML = renderCard(exact);
+      bindCardActions(exact.id);
+      return;
+    }
+
+    const partial = customers.filter(c => normalizePlate(c.plate).includes(q));
+    if(partial.length === 1){
+      area.innerHTML = renderCard(partial[0]);
+      bindCardActions(partial[0].id);
+      return;
+    }
+    if(partial.length > 1){
+      area.innerHTML = partial.map(c => `
+        <div class="match-row" data-id="${c.id}">
+          ${thumbHtml(c, 'thumb-sm')}
+          <div>
+            <div class="plate-tag-sm">${escapeHtml(c.plate)}</div>
+            <div class="name-sm">${escapeHtml(c.name)}</div>
+          </div>
+        </div>`).join('');
+      area.querySelectorAll('.match-row').forEach(row => {
+        row.addEventListener('click', () => {
+          const cust = customers.find(c=>c.id===row.dataset.id);
+          $('searchInput').value = cust ? cust.plate : '';
+          runSearch();
+        });
+      });
+      return;
+    }
+
+    area.innerHTML = `
+      <div class="empty-cta">
+        <p>ບໍ່ພົບລູກຄ້າທີ່ໃຊ້ທະບຽນນີ້</p>
+        <button class="btn btn-primary" id="addFromSearch">+ ເພີ່ມລູກຄ້າໃໝ່ດ້ວຍທະບຽນນີ້</button>
+      </div>`;
+    $('addFromSearch').addEventListener('click', () => openForm(null, raw));
+  }
+
+  function renderCard(c){
+    return `
+      <div class="card">
+        ${thumbHtml(c, 'thumb')}
+        <div class="info">
+          <div class="plate-tag">${escapeHtml(c.plate)}</div>
+          <div class="name">${escapeHtml(c.name)}</div>
+          ${c.phone ? `<div class="sub">📞 ${escapeHtml(c.phone)}</div>` : ''}
+          ${c.car ? `<div class="sub">🚗 ${escapeHtml(c.car)}</div>` : ''}
+          ${c.note ? `<div class="note">${escapeHtml(c.note)}</div>` : ''}
+          <div class="card-actions">
+            <button class="btn btn-ghost" data-edit="${c.id}">ແກ້ໄຂ</button>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function bindCardActions(id){
+    const editBtn = document.querySelector(`[data-edit="${id}"]`);
+    if(editBtn){
+      editBtn.addEventListener('click', () => {
+        const c = customers.find(x => x.id === id);
+        openForm(c);
+      });
+    }
+  }
+
+  function escapeHtml(s){
+    return (s || '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  }
+
+  function renderList(){
+    const area = $('listArea');
+    if(customers.length === 0){
+      area.innerHTML = `<div class="search-empty-row">ຍັງບໍ່ມີລູກຄ້າໃນລະບົບ ກົດປຸ່ມ + ເພື່ອເພີ່ມຄົນທຳອິດ</div>`;
+      return;
+    }
+    area.innerHTML = customers.map(c => `
+      <div class="list-row" data-id="${c.id}">
+        ${thumbHtml(c, 'thumb-sm')}
+        <div class="rinfo">
+          <div class="rplate">${escapeHtml(c.plate)}</div>
+          <div class="rname">${escapeHtml(c.name)}</div>
+        </div>
+      </div>`).join('');
+    area.querySelectorAll('.list-row').forEach(row => {
+      row.addEventListener('click', () => {
+        const c = customers.find(x => x.id === row.dataset.id);
+        openForm(c);
+      });
+    });
+  }
+
+  function openForm(c, prefillPlate){
+    editingId = c ? c.id : null;
+    pendingPhoto = c ? (c.photo || null) : null;
+    $('formTitle').textContent = c ? 'ແກ້ໄຂຂໍ້ມູນລູກຄ້າ' : 'ເພີ່ມລູກຄ້າໃໝ່';
+    $('formPlate').value = c ? c.plate : (prefillPlate || '');
+    $('formName').value = c ? c.name : '';
+    $('formPhone').value = c ? (c.phone || '') : '';
+    $('formCar').value = c ? (c.car || '') : '';
+    $('formNote').value = c ? (c.note || '') : '';
+    updatePhotoPreview();
+    $('deleteWrap').style.display = c ? 'flex' : 'none';
+    showView('form');
+  }
+
+  function updatePhotoPreview(){
+    const p = $('photoPreview');
+    if(pendingPhoto){
+      p.outerHTML = `<img class="photo-preview" id="photoPreview" src="${pendingPhoto}" />`;
+    }else{
+      p.outerHTML = `<div class="photo-preview" id="photoPreview">ບໍ່ມີຮູບ</div>`;
+    }
+  }
+
+  function resizeAndStorePhoto(file){
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const maxDim = 400;
+          let w = img.width, h = img.height;
+          if(w > h && w > maxDim){ h = h * (maxDim / w); w = maxDim; }
+          else if(h > maxDim){ w = w * (maxDim / h); h = maxDim; }
+          const canvas = document.createElement('canvas');
+          canvas.width = w; canvas.height = h;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL('image/jpeg', 0.72));
+        };
+        img.onerror = reject;
+        img.src = e.target.result;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // ---- Event bindings ----
+  $('searchInput').addEventListener('input', runSearch);
+
+  $('manageLink').addEventListener('click', () => {
+    renderList();
+    showView('list');
+  });
+  $('backFromList').addEventListener('click', () => showView('home'));
+  $('backFromForm').addEventListener('click', () => { renderHome(); showView('home'); });
+
+  $('fabAdd').addEventListener('click', () => openForm(null));
+
+  $('photoInput').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if(!file) return;
+    try{
+      pendingPhoto = await resizeAndStorePhoto(file);
+      updatePhotoPreview();
+    }catch(err){
+      showToast('ອ່ານຮູບບໍ່ສຳເລັດ ລອງໃໝ່');
+    }
+  });
+
+  $('saveBtn').addEventListener('click', async () => {
+    const plate = $('formPlate').value.trim();
+    const name = $('formName').value.trim();
+    if(!plate || !name){
+      showToast('ກະລຸນາປ້ອນເລກທະບຽນ ແລະຊື່ລູກຄ້າ');
+      return;
+    }
+    const record = {
+      id: editingId || (Date.now().toString(36) + Math.random().toString(36).slice(2,7)),
+      plate,
+      name,
+      phone: $('formPhone').value.trim(),
+      car: $('formCar').value.trim(),
+      note: $('formNote').value.trim(),
+      photo: pendingPhoto
+    };
+    if(editingId){
+      const idx = customers.findIndex(c => c.id === editingId);
+      customers[idx] = record;
+    }else{
+      customers.push(record);
+    }
+    const ok = await saveCustomers();
+    if(ok){
+      showToast('ບັນທຶກແລ້ວ');
+      $('searchInput').value = plate;
+      renderHome();
+      showView('home');
+    }
+  });
+
+  $('deleteBtn').addEventListener('click', async () => {
+    if(!editingId) return;
+    if(!confirm('ລຶບຂໍ້ມູນລູກຄ້າລາຍນີ້ແທ້ບໍ?')) return;
+    customers = customers.filter(c => c.id !== editingId);
+    const ok = await saveCustomers();
+    if(ok){
+      showToast('ລຶບແລ້ວ');
+      $('searchInput').value = '';
+      renderHome();
+      showView('home');
+    }
+  });
+
+  loadCustomers();
+</script>
+</body>
+</html>
